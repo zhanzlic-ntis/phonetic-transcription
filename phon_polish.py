@@ -6,49 +6,53 @@
 import re
 import sys
 
+vowels = { 'a': 'a', 'ą': 'ɔ', 'e': 'ɛ', 'ę': 'ɛ', 'i': 'i', 'o': 'ɔ',
+           'u': 'u', 'ó': 'u', 'y': 'ɨ'}
+
+sonors = { 'j': 'j', 'm': 'm', 'n': 'n', 'ń': 'ɲ', 'ni': 'ɲ', 'r': 'r',
+           'l': 'l', 'ł': 'w'}
+
+voice_voice = { 'b': 'b', 'd': 'd', 'g': 'ɡ', 'w': 'v', 'z': 'z',
+                'dź': 'd͡ʑ', 'dzi': 'd͡ʑ', 'ź': 'ʑ', 'zi': 'ʑ', 'dz': 'd͡z',
+                'dż': 'd͡ʐ', 'ż': 'ʐ', 'rz': 'ʐ', 'h': 'ɣ', 'ch': 'ɣ',
+                'v': 'v', 'q': 'kv', 'x': 'ks'}
+
+voice_voiceless = { 'b': 'p', 'd': 't', 'g': 'k', 'w': 'f', 'z': 's',
+                    'dź': 't͡ɕ', 'dzi': 't͡ɕ', 'ź': 'ɕ', 'zi': 'ɕ',
+                    'dz': 't͡s', 'dż': 'd͡ʐ', 'ż': 'ʂ', 'rz': 'ʂ', 'h': 'x',
+                    'ch': 'x', 'v': 'f', 'q': 'kf', 'x': 'ks'}
+
+voiceless_voiceless = { 'p': 'p', 't': 't', 'k': 'k', 'f': 'f', 's': 's',
+                        'ć': 't͡ɕ', 'ci': 't͡ɕ', 'ś': 'ɕ', 'si': 'ɕ',
+                        'c': 't͡s', 'cz': 't͡ʂ', 'sz': 'ʂ'}
+
+voiceless_voice = { 'p': 'b', 't': 'd', 'k': 'ɡ', 'f': 'v', 's': 'z',
+                    'ć': 'd͡ʑ', 'ci': 'd͡ʑ', 'ś': 'ʑ', 'si': 'ʑ',
+                    'c': 'd͡z', 'cz': 'd͡ʐ', 'sz': 'ʐ'}
+
+# exceptions
+n_nasals = ('d', 'g', 'dz', 'c', 'k', 't', 'cz', 'dż')
+w_nasals = ('w', 'z', 'ź', 'zi', 'rz', 'ż', 'ś', 'si', 'ch',
+                'h', 'f', 's', 'sz')
+m_nasals = ('b', 'p')
+ni_nasals = ('dź', 'dzi', 'ci', 'ć')
+consonants_soft = ('dzi', 'zi', 'ci', 'si', 'ni')
+
+alphabet = list(vowels.keys()) + list(sonors.keys()) + list(voice_voice.keys()) + list(voiceless_voiceless.keys())
+
+delimit_symbols = [',', ';', ':', '.', '…', '!', '?', '"', '-', '–']
+
 
 # function for the phonetic transcription of Polish language to IPA
 def ipa_polish(text):
     """Phonetic transcription to IPA of given Polish text or word."""
     # set transription table (IPA)
-    vowels = {'a': 'a', 'ą': 'ɔ', 'e': 'ɛ', 'ę': 'ɛ', 'i': 'i', 'o': 'ɔ',
-              'u': 'u', 'ó': 'u', 'y': 'ɨ'}
-
-    sonors = {'j': 'j', 'm': 'm', 'n': 'n', 'ń': 'ɲ', 'ni': 'ɲ', 'r': 'r',
-              'l': 'l', 'ł': 'w'}
-
-    voice_voice = {'b': 'b', 'd': 'd', 'g': 'ɡ', 'w': 'v', 'z': 'z',
-                   'dź': 'd͡ʑ', 'dzi': 'd͡ʑ', 'ź': 'ʑ', 'zi': 'ʑ', 'dz': 'd͡z',
-                   'dż': 'd͡ʐ', 'ż': 'ʐ', 'rz': 'ʐ', 'h': 'ɣ', 'ch': 'ɣ',
-                   'v': 'v', 'q': 'kv', 'x': 'ks'}
-
-    voice_voiceless = {'b': 'p', 'd': 't', 'g': 'k', 'w': 'f', 'z': 's',
-                       'dź': 't͡ɕ', 'dzi': 't͡ɕ', 'ź': 'ɕ', 'zi': 'ɕ',
-                       'dz': 't͡s', 'dż': 'd͡ʐ', 'ż': 'ʂ', 'rz': 'ʂ', 'h': 'x',
-                       'ch': 'x', 'v': 'f', 'q': 'kf', 'x': 'ks'}
-
-    voiceless_voiceless = {'p': 'p', 't': 't', 'k': 'k', 'f': 'f', 's': 's',
-                           'ć': 't͡ɕ', 'ci': 't͡ɕ', 'ś': 'ɕ', 'si': 'ɕ',
-                           'c': 't͡s', 'cz': 't͡ʂ', 'sz': 'ʂ'}
-
-    voiceless_voice = {'p': 'b', 't': 'd', 'k': 'ɡ', 'f': 'v', 's': 'z',
-                       'ć': 'd͡ʑ', 'ci': 'd͡ʑ', 'ś': 'ʑ', 'si': 'ʑ',
-                       'c': 'd͡z', 'cz': 'd͡ʐ', 'sz': 'ʐ'}
-
-    # exceptions
-    n_nasals = ('d', 'g', 'dz', 'c', 'k', 't', 'cz', 'dż')
-    w_nasals = ('w', 'z', 'ź', 'zi', 'rz', 'ż', 'ś', 'si', 'ch',
-                'h', 'f', 's', 'sz')
-    m_nasals = ('b', 'p')
-    ni_nasals = ('dź', 'dzi', 'ci', 'ć')
-    consonants_soft = ('dzi', 'zi', 'ci', 'si', 'ni')
-
-    # TODO: foreign words
 
     # split on clauses
     text = text.replace('...', '.')
-    parts = re.split(r'[,;\.\!\?\"\-\–$]', text)
-    delimiters = [l for l in text if l in ',;.!?"-–']
+    text = text.replace('--', '-')
+    parts = re.split(r'[,;:\.\…\!\?\"\-\–$]', text)
+    delimiters = [l for l in text if l in delimit_symbols]
 
     # transcript clauses
     transcripted_parts = list()
@@ -72,6 +76,11 @@ def ipa_polish(text):
             if part[l] in digraphs:
                 part[l] = digraphs[part[l]]
 
+        # check symbols out of alphabet
+        for p in part:
+            if not p.isspace() and p not in alphabet:
+                return None
+
         # transcripted input
         ipa = [l for l in part]
 
@@ -79,26 +88,20 @@ def ipa_polish(text):
         posit_vowel = [-1] + [i for i in range(len(part)) if part[i] in vowels]
         posit_sonor = [i for i in range(len(part)) if part[i] in sonors]
 
-        # neutralization
-        j = posit_vowel[-1]
-        if posit_sonor and posit_sonor[-1] > posit_vowel[-1]:
-            j = posit_sonor[-1]
-
-        i = len(part) - 1
-        while i > j:
-            if part[i] in voice_voiceless:
-                ipa[i] = voice_voiceless[part[i]]
-            elif part[i] in voiceless_voiceless:
-                ipa[i] = voiceless_voiceless[part[i]]
-            elif part[i] in sonors:
-                ipa[i] = sonors[part[i]]
-            i -= 1
-
         # transctiption and assimilation
+        j = len(part) - 1        
+        term = True
+        
         while posit_vowel:
             i, k = j, j
             j = posit_vowel.pop()
-            voice = None  # assimil. type (N=uknown, T=voice, F=voiceless)
+            
+            if term:
+                voice = False  # assimil. type (N=uknown, T=voice, F=voiceless)
+                term = False
+            else:
+                voice = None  # assimil. type (N=uknown, T=voice, F=voiceless)
+            
             while i > j:
                 # transcription of soft consonants
                 if part[i] in consonants_soft:
@@ -110,9 +113,9 @@ def ipa_polish(text):
                         else:
                             ipa[i] = voice_voice[part[i]] + ' i'
                     # ci, si
-                    elif i < len(part) - 1 and part[i] in ('ci', 'si'):
+                    elif part[i] in ('ci', 'si'):
                         voice = False
-                        if part[i+1] in vowels:
+                        if i < len(part) - 1 and part[i+1] in vowels:
                             ipa[i] = voiceless_voiceless[part[i]]
                         else:
                             ipa[i] = voiceless_voiceless[part[i]] + ' i'
@@ -154,7 +157,7 @@ def ipa_polish(text):
                         ipa[i] = vowels[part[i]]
 
                 # transcription of sonors and consonants
-                elif k != i:
+                else:
                     # sonors
                     if part[i] in sonors:
                         voice = None
@@ -171,8 +174,7 @@ def ipa_polish(text):
                                 voice = True
                         # regression or progression of ż and rz
                         elif part[i] in ('ż', 'rz') and i > 0:
-                            if part[i-1] in 'ae' or \
-                               part[i-1] in voiceless_voiceless:
+                            if (part[i-1] in 'ae') or (part[i-1] in voiceless_voiceless):
                                 ipa[i] = voice_voiceless[part[i]]
                                 voice = False
                             else:
@@ -215,7 +217,7 @@ def ipa_polish(text):
     if i < len(transcripted_parts):
         transcripted += transcripted_parts[-1]
 
-    transcripted = re.sub(r'\.|\?|\!|\;|\"', '   ||   ', transcripted)
+    transcripted = re.sub(r'\.|\…|\:|\?|\!|\;|\"', '   ||   ', transcripted)
     transcripted = re.sub(r'\,|\-|\–', '   |   ', transcripted)
     return transcripted
 
