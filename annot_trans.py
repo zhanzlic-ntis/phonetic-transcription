@@ -7,6 +7,49 @@ from phon_polish import ipa_polish
 
 punct_symbols = [".", ",", ";", ":", "!", "?", "-", "…"]
 
+# ----------
+
+def fix_text(text: str) -> str:
+
+    text = text.strip().lstrip(".,;-—!? ")  # remove improper initial punctuation
+    text = text.replace("—", "-").replace("–", "-")  # unify hyphen symbols
+    text = text.replace('...', '…').replace('..', '…').replace('--', '-')
+
+    text = text.replace("!.", "!").replace(".!", "!")  # simplify punctuation combinations
+    text = text.replace("?.", "?").replace(".?", "?")
+
+    text = text.replace("\"", "")  # discard quotation marks
+
+    return text
+
+# ----------
+
+def split_text(text: str) -> list:
+
+    tokens_txt = list()
+    for token_txt in text.split():
+
+        if all(c in punct_symbols for c in token_txt): # standalone punctuation symbol(s)
+            tokens_txt.append(token_txt)
+
+        else:
+            chars = ""
+            for phn in token_txt:
+                if phn in punct_symbols:
+                    if len(chars) > 0:
+                        tokens_txt.append(chars)
+                        chars = ""
+                    tokens_txt[-1] += phn
+                else:
+                    chars += phn
+
+            if len(chars) > 0:
+                tokens_txt.append(chars)
+
+    return tokens_txt
+
+# ----------
+
 def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = "", id_separator: str = " ") -> str:
 
     if "|" in line:
@@ -31,31 +74,13 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
     if idx >= 0:
         utt_name = utt_name[idx+1:]
 
-    text = text.strip().lstrip(".,;-—!? ")  # remove improper initial punctuation
-    text = text.replace("—", "-").replace("–", "-")  # unify hyphen symbols
-    text = text.replace('...', '…').replace('..', '…').replace('--', '-')
-    
-    text = text.replace("!.", "!").replace(".!", "!")  # simplify punctuation combinations
-    text = text.replace("?.", "?").replace(".?", "?")
+    text = fix_text(text)
+    tokens_txt = split_text(text)
 
     phn_trans = ipa_polish(text)
     if phn_trans is None:
         return None
 
-    tokens_txt = list()
-    for token_txt in text.split():
-        
-        punct_end = ""
-        while len(token_txt) > 0 and token_txt[-1] in punct_end:
-            punct_end = token_txt[-1] + punct_end
-            token_txt = token_txt[:-1]
-        
-        if len(token_txt) == 0:  # punctuation only
-            tokens_txt.append(punct_end)
-        else:
-            # TODO: additional split by inner punctuation
-            tokens_txt.append(token_txt + punct_end)
-    
     tokens_phn = phn_trans.strip().split("   ")
     tokens_phn = [ token.strip().replace(" ", phn_separator) for token in tokens_phn ]
     tokens_phn = [ token for token in tokens_phn if token not in ("|", "||", "") ]
@@ -65,7 +90,7 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
 
     for token_txt in tokens_txt:
         
-        if token_txt in punct_symbols: # standalone punctuation or symbol
+        if all(c in punct_symbols for c in token_txt): # standalone punctuation symbol(s)
             merged.append(token_txt)
             continue
 
@@ -110,6 +135,7 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
     else:
         return None
 
+# ----------
 
 # running script if it is used in shell (with stdin or path to file)
 if __name__ == '__main__':
