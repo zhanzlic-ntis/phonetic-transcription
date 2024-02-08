@@ -10,7 +10,13 @@ punct_symbols = [".", ",", ";", ":", "!", "?", "-", "…"]
 def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = "", id_separator: str = " ") -> str:
 
     if "|" in line:
-        utt_name, text = line.split("|", maxsplit=1)
+        items = line.split("|")
+        if len(items) <= 3:
+            utt_name = items[0]
+            text = items[1]
+        else:
+            print("Cannot parse line - too many separators \"|\":", file=sys.stderr)
+            print(line, file=sys.stderr)
     else:
         utt_name, text = line.split(maxsplit=1)
     
@@ -25,7 +31,12 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
     if idx >= 0:
         utt_name = utt_name[idx+1:]
 
-    text = text.strip().lstrip(".,;-—!? ").replace("—", "-").replace('...', '…').replace('--', '-')
+    text = text.strip().lstrip(".,;-—!? ")  # remove improper initial punctuation
+    text = text.replace("—", "-").replace("–", "-")  # unify hyphen symbols
+    text = text.replace('...', '…').replace('..', '…').replace('--', '-')
+    
+    text = text.replace("!.", "!").replace(".!", "!")  # simplify punctuation combinations
+    text = text.replace("?.", "?").replace(".?", "?")
 
     phn_trans = ipa_polish(text)
     if phn_trans is None:
@@ -47,6 +58,8 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
                 print("Cannot merge:", file=sys.stderr)
                 print(tokens_txt, file=sys.stderr)
                 print(tokens_phn, file=sys.stderr)
+                print("Default text:", items[1], file=sys.stderr)
+                print(text, file=sys.stderr)
                 return None
 
             punct = ""
