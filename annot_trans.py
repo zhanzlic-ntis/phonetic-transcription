@@ -79,6 +79,7 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
 
     phn_trans = ipa_polish(text)
     if phn_trans is None:
+        print("Cannot transcribe:", text, file=sys.stderr)
         return None
 
     tokens_phn = phn_trans.strip().split("   ")

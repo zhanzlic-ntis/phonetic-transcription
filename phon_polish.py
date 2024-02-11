@@ -79,6 +79,7 @@ def ipa_polish(text):
         # check symbols out of alphabet
         for p in part:
             if not p.isspace() and p not in alphabet:
+                print(f"Unknown character \"{p}\"", file=sys.stderr)
                 return None
 
         # transcripted input
