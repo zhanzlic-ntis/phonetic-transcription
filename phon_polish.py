@@ -40,8 +40,7 @@ consonants_soft = ('dzi', 'zi', 'ci', 'si', 'ni')
 
 alphabet = list(vowels.keys()) + list(sonors.keys()) + list(voice_voice.keys()) + list(voiceless_voiceless.keys())
 
-delimit_symbols = [',', ';', ':', '.', '…', '!', '?', '"', '-', '–']
-
+delimit_symbols = [',', ';', ':', '.', '…', '!', '?', '"', '-', '(', ')']
 
 # function for the phonetic transcription of Polish language to IPA
 def ipa_polish(text):
@@ -51,7 +50,7 @@ def ipa_polish(text):
     # split on clauses
     text = text.replace('...', '.')
     text = text.replace('--', '-')
-    parts = re.split(r'[,;:\.\…\!\?\"\-\–$]', text)
+    parts = re.split(r'[,;:\.\…\!\?\"\-\(\)$]', text)
     delimiters = [l for l in text if l in delimit_symbols]
 
     # transcript clauses
@@ -219,7 +218,7 @@ def ipa_polish(text):
         transcripted += transcripted_parts[-1]
 
     transcripted = re.sub(r'\.|\…|\:|\?|\!|\;|\"', '   ||   ', transcripted)
-    transcripted = re.sub(r'\,|\-|\–', '   |   ', transcripted)
+    transcripted = re.sub(r'\,|\-|\(|\)', '   |   ', transcripted)
     return transcripted
 
 

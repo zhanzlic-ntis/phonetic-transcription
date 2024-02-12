@@ -5,7 +5,7 @@ import re
 import sys
 from phon_polish import ipa_polish
 
-punct_symbols = [".", ",", ";", ":", "!", "?", "-", "…"]
+punct_symbols = [".", ",", ";", ":", "!", "?", "-", "…", ")"]
 
 # ----------
 
@@ -18,7 +18,7 @@ def fix_text(text: str) -> str:
     text = text.replace("!.", "!").replace(".!", "!")  # simplify punctuation combinations
     text = text.replace("?.", "?").replace(".?", "?")
 
-    text = text.replace("\"", "")  # discard quotation marks
+    text = text.replace("\"", "").replace("„", "")  # discard quotation marks
 
     return text
 
