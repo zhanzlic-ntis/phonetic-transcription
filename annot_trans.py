@@ -11,7 +11,6 @@ punct_symbols = [".", ",", ";", ":", "!", "?", "-", "…", ")"]
 
 def fix_text(text: str) -> str:
 
-    text = text.strip().lstrip(".,;-—!? ")  # remove improper initial punctuation
     text = text.replace("—", "-").replace("–", "-")  # unify hyphen symbols
     text = text.replace('...', '…').replace('..', '…').replace('--', '-')
 
@@ -19,6 +18,10 @@ def fix_text(text: str) -> str:
     text = text.replace("?.", "?").replace(".?", "?")
 
     text = text.replace("\"", "").replace("„", "")  # discard quotation marks
+    
+    # remove improper initial punctuation and whitespaces
+    while len(text) > 0 and (text[0] in punct_symbols or text[0].isspace()):
+        text = text[1:]
 
     return text
 
