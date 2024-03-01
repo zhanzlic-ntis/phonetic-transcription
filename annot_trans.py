@@ -17,7 +17,8 @@ def fix_text(text: str) -> str:
     text = text.replace("!.", "!").replace(".!", "!")  # simplify punctuation combinations
     text = text.replace("?.", "?").replace(".?", "?")
 
-    text = text.replace("\"", "").replace("„", "")  # discard quotation marks
+    text = text.replace("\"", "").replace("„", "").replace("'", "")  # discard quotation marks
+    text = text.replace("<unk>", "")  # remove unknown symbols
     
     # remove improper initial punctuation and whitespaces
     while len(text) > 0 and (text[0] in punct_symbols or text[0].isspace()):
