@@ -137,7 +137,7 @@ def ipa_polish(text):
                         ipa[i] = 'j'
                     # ą, ę
                     elif part[i] in 'ąę':
-                        if i is len(part) - 1:
+                        if i == len(part) - 1:
                             if part[i] == 'ą':
                                 ipa[i] = vowels[part[i]] + ' u̯'
                             else:
