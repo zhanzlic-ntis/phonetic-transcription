@@ -5,7 +5,7 @@ import re
 import sys
 from phon_polish import ipa_polish
 
-punct_symbols = [".", ",", ";", ":", "!", "?", "-", "…", ")"]
+punct_symbols = [".", ",", ";", ":", "!", "?", "-", "…", ")", "&"]
 
 # ----------
 
@@ -118,14 +118,16 @@ def merge_tokens(tokens_orig: list, tokens_phn: list, phn_brackets=("[", "]")) -
             print(tokens_phn, file=sys.stderr)
             return None
         
-        if "-" in token_orig[0]:
-            token_phn = ""
-            for segment in token_orig[0].split("-"):
-                if len(segment) > 0:
-                    if token_phn != "":
-                        token_phn += "+"
-                    token_phn += tokens_phn[idx_phn]
-                    idx_phn += 1
+        for separator in [ "-", "." ]:
+            if separator in token_orig[0]:
+                token_phn = ""
+                for segment in token_orig[0].split(separator):
+                    if len(segment) > 0:
+                        if token_phn != "":
+                            token_phn += "+"
+                        token_phn += tokens_phn[idx_phn]
+                        idx_phn += 1
+                break
         else:
             token_phn = tokens_phn[idx_phn]
             if token_phn[-1] == ":" and token_txt[-1] == ":":  # remove forgotten ":"
@@ -133,7 +135,7 @@ def merge_tokens(tokens_orig: list, tokens_phn: list, phn_brackets=("[", "]")) -
             idx_phn += 1
             
         if (len(token_orig[1]) > 0) and (token_orig[1] != token_phn): # add default and new transcription (when differ)
-            token_phn = token_orig[1] + " " + token_phn
+            token_phn = token_phn + " " + token_orig[1]
 
         items_merged.append(token_orig[0] + phn_brackets[0] + token_phn + phn_brackets[1] + token_orig[2])
         
