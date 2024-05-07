@@ -135,7 +135,7 @@ def merge_tokens(tokens_orig: list, tokens_phn: list, phn_brackets=("[", "]")) -
             idx_phn += 1
             
         if (len(token_orig[1]) > 0) and (token_orig[1] != token_phn): # add default and new transcription (when differ)
-            token_phn = token_phn + " " + token_orig[1]
+            token_phn = token_phn + "|" + token_orig[1]
 
         items_merged.append(token_orig[0] + phn_brackets[0] + token_phn + phn_brackets[1] + token_orig[2])
         
