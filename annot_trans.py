@@ -54,6 +54,98 @@ def split_text(text: str) -> list:
 
 # ----------
 
+def parse_text(text: str) -> list:
+    # returns list of tokens (text, phones, punctuation)
+
+    tokens_txt = list()
+    for token_txt in text.split():
+        
+        text = ""
+        phones = ""
+        punct = ""
+
+        while len(token_txt) > 0 and token_txt[-1] in punct_symbols:  # cut terminal punctuation symbol(s)
+            punct = token_txt[-1] + punct
+            token_txt = token_txt[:-1]
+
+        phon_flag = False
+        for char in token_txt:
+            
+            if char == "[":
+                phon_flag = True
+            elif char == "]":
+                phon_flag = False
+            
+            else:
+                if phon_flag:
+                    phones += char
+                else:
+                    text += char
+        
+        tokens_txt.append((text, phones, punct))
+
+    return tokens_txt
+
+# ----------
+
+def get_text(tokens: list, include_phones: bool = True) -> str:
+    
+    text_items = list()
+    for token in tokens:
+        if include_phones and token[1]:
+            text_items.append(f"{token[0]}[{token[1]}]{token[2]}")
+        else:
+            text_items.append(f"{token[0]}{token[2]}")
+    
+    return " ".join(text_items)
+
+# ----------
+
+def merge_tokens(tokens_orig: list, tokens_phn: list, phn_brackets=("[", "]")) -> str:
+    
+    items_merged = list()
+    
+    idx_phn = 0
+    for token_orig in tokens_orig:
+        
+        if len(token_orig[0]) == 0 and len(token_orig[2]) > 0: # standalone punctuation symbol(s)
+            items_merged.append(token_orig[2])
+            continue
+
+        if idx_phn >= len(tokens_phn):
+            print("Cannot merge:", file=sys.stderr)
+            print(tokens_orig, file=sys.stderr)
+            print(tokens_phn, file=sys.stderr)
+            return None
+        
+        if "-" in token_orig[0]:
+            token_phn = ""
+            for segment in token_orig[0].split("-"):
+                if len(segment) > 0:
+                    if token_phn != "":
+                        token_phn += "+"
+                    token_phn += tokens_phn[idx_phn]
+                    idx_phn += 1
+        else:
+            token_phn = tokens_phn[idx_phn]
+            if token_phn[-1] == ":" and token_txt[-1] == ":":  # remove forgotten ":"
+                token_phn = token_phn[:-1]
+            idx_phn += 1
+            
+        if (len(token_orig[1]) > 0) and (token_orig[1] != token_phn): # add default and new transcription (when differ)
+            token_phn = token_orig[1] + " " + token_phn
+
+        items_merged.append(token_orig[0] + phn_brackets[0] + token_phn + phn_brackets[1] + token_orig[2])
+        
+    if idx_phn < len(tokens_phn):  # check if all phonetic tokens were merged
+        print("Cannot merge:", file=sys.stderr)
+        print(tokens_orig, file=sys.stderr)
+        print(tokens_phn, file=sys.stderr)
+    
+    return " ".join(items_merged)
+
+# ----------
+
 def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = "", id_separator: str = " ") -> str:
 
     if "|" in line:
@@ -79,9 +171,10 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
         utt_name = utt_name[idx+1:]
 
     text = fix_text(text)
-    tokens_txt = split_text(text)
+    tokens = parse_text(text)
+    #tokens_txt = split_text(text)
 
-    phn_trans = ipa_polish(text)
+    phn_trans = ipa_polish(get_text(tokens, include_phones=False))
     if phn_trans is None:
         print("Cannot transcribe:", text, file=sys.stderr)
         return None
@@ -91,51 +184,9 @@ def trans_utt(line: str, phn_brackets: tuple = ("[", "]"), phn_separator: str = 
     tokens_phn = [ token for token in tokens_phn if token not in ("|", "||", "") ]
 
     idx_phn = 0
-    merged = list()
+    merged_str = merge_tokens(tokens, tokens_phn, phn_brackets)
 
-    for token_txt in tokens_txt:
-        
-        if all(c in punct_symbols for c in token_txt): # standalone punctuation symbol(s)
-            merged.append(token_txt)
-            continue
-
-        if idx_phn >= len(tokens_phn):
-            print("Cannot merge:", file=sys.stderr)
-            print(tokens_txt, file=sys.stderr)
-            print(tokens_phn, file=sys.stderr)
-            return None
-
-        punct = ""
-        while token_txt[-1] in punct_symbols:
-            punct = token_txt[-1]
-            token_txt = token_txt[:-1]
-            if token_txt == "":
-                print("Cannot merge:", file=sys.stderr)
-                print(tokens_txt, file=sys.stderr)
-                print(tokens_phn, file=sys.stderr)
-                return None
-        
-        if "-" in token_txt:
-            token_phn = ""
-            for segment in token_txt.split("-"):
-                if len(segment) > 0:
-                    token_phn += tokens_phn[idx_phn]
-                    idx_phn += 1
-        else:
-            token_phn = tokens_phn[idx_phn]
-            if token_phn[-1] == ":" and token_txt[-1] == ":":  # remove forgotten ":"
-                token_phn = token_phn[:-1]
-            idx_phn += 1
-
-        merged.append(token_txt + phn_brackets[0] + token_phn + phn_brackets[1] + punct)
-        
-    if idx_phn < len(tokens_phn):  # check if all phonetic tokens were merged
-        print("Cannot merge:", file=sys.stderr)
-        print(tokens_txt, file=sys.stderr)
-        print(tokens_phn, file=sys.stderr)
-
-    if len(merged) > 0:
-        merged_str = " ".join(merged)
+    if len(merged_str) > 0:
         return f"{utt_name}{id_separator}{merged_str}"
     else:
         return None
